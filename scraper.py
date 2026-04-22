@@ -5,7 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
-from db import init_db, save_jobs
+from db import init_db, save_jobs_raw, transform_and_load
 from config import KEYWORDS, MAX_PAGES, DELAY
 import time
 
@@ -115,7 +115,8 @@ def scrape_keyword(driver, keyword):
 
             print(f"  ✅ {len(jobs)} job ditemukan")
             all_jobs.extend(jobs)
-            save_jobs(jobs)
+            save_jobs_raw(jobs)
+            transform_and_load(jobs)
 
         except Exception as e:
             print(f"  ❌ Error halaman {page}: {e}")

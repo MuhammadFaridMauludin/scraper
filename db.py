@@ -1,15 +1,17 @@
 import mysql.connector
 from dotenv import load_dotenv
 import os
+from etl import parse_salary, detect_experience
 
 load_dotenv()
 
 def get_connection():
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME")
+        host="168.110.192.215",
+        port=3306,
+        user="scraper",
+        password="@Corazon015.",
+        database="job_analisis"
     )
 
 def init_db():
@@ -36,39 +38,57 @@ def init_db():
     conn.close()
     print("✅ Tabel jobs siap!")
 
-def save_jobs(jobs):
-    if not jobs:
-        return
+def save_jobs_raw(jobs):
     conn = get_connection()
     cursor = conn.cursor()
-    inserted = 0
-    skipped = 0
+
     for job in jobs:
-        try:
-            cursor.execute("""
-                INSERT INTO jobs 
-                    (job_id, title, company, location, salary, job_type, classification, date_posted, job_url, keyword)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE scraped_at=NOW()
-            """, (
-                job.get("job_id"),
-                job.get("title"),
-                job.get("company"),
-                job.get("location"),
-                job.get("salary"),
-                job.get("job_type"),
-                job.get("classification"),
-                job.get("date_posted"),
-                job.get("job_url"),
-                job.get("keyword"),
-            ))
-            if cursor.rowcount == 1:
-                inserted += 1
-            else:
-                skipped += 1
-        except Exception as e:
-            print(f"  ⚠️ Error insert: {e}")
+        cursor.execute("""
+            INSERT INTO jobs_raw 
+            (job_id, title, company, location, salary, job_type, classification, date_posted, job_url, keyword)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            job.get("job_id"),
+            job.get("title"),
+            job.get("company"),
+            job.get("location"),
+            job.get("salary"),
+            job.get("job_type"),
+            job.get("classification"),
+            job.get("date_posted"),
+            job.get("job_url"),
+            job.get("keyword"),
+        ))
+
     conn.commit()
     cursor.close()
     conn.close()
-    print(f"  💾 {inserted} baru disimpan, {skipped} duplikat dilewati")
+    print(f"  💾 {len(jobs)} data disimpan ke raw")
+
+def transform_and_load(jobs):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    for job in jobs:
+        salary_min, salary_max = parse_salary(job.get("salary"))
+        experience = detect_experience(job.get("title"))
+
+        cursor.execute("""
+            INSERT INTO jobs_clean
+            (job_id, title, company, location, salary_min, salary_max, experience_level, keyword)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+            ON DUPLICATE KEY UPDATE scraped_at=NOW()
+        """, (
+            job.get("job_id"),
+            job.get("title"),
+            job.get("company"),
+            job.get("location"),
+            salary_min,
+            salary_max,
+            experience,
+            job.get("keyword"),
+        ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
