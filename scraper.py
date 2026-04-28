@@ -9,25 +9,17 @@ from db import init_db, save_jobs_raw, transform_and_load
 from config import KEYWORDS, MAX_PAGES, DELAY
 import time
 
+import undetected_chromedriver as uc
+
 def init_driver():
-    options = Options()
-    options.add_argument("--headless=new")
+    options = uc.ChromeOptions()
+
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("user-agent=Mozilla/5.0 ...")
-    options.add_argument("--disable-blink-features=AutomationControlled")
 
-    options.binary_location = "/usr/bin/google-chrome"
-
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
-
-    driver.execute_script(
-        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-    )
-
+    driver = uc.Chrome(options=options, headless=False)
     return driver
 
 def parse_jobs(driver, keyword, page):
