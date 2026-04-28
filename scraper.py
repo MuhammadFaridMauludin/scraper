@@ -19,6 +19,11 @@ def init_driver():
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
+    driver = uc.Chrome(
+        options=options,
+        version_main=147
+    )
+
     driver = uc.Chrome(options=options, headless=False)
     return driver
 
