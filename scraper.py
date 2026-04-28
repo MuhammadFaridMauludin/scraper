@@ -17,20 +17,26 @@ def init_driver():
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("user-agent=Mozilla/5.0 ...")
+    options.add_argument("--disable-blink-features=AutomationControlled")
 
     options.binary_location = "/usr/bin/google-chrome"
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
+
+    driver.execute_script(
+        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    )
+
     return driver
 
 def parse_jobs(driver, keyword, page):
     jobs = []
     try:
-        WebDriverWait(driver, 15).until(
+        WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "article[data-job-id]"))
         )
-        cards = driver.find_elements(By.CSS_SELECTOR, "article[data-job-id]")
+        cards = driver.find_elements(By.CSS_SELECTOR, "article")
 
         for card in cards:
             try:
@@ -109,7 +115,9 @@ def scrape_keyword(driver, keyword):
 
         try:
             driver.get(url)
-            time.sleep(DELAY)
+            print("TITLE:", driver.title)
+            print(driver.page_source[:1000])
+            time.sleep(DELAY+3)
             jobs = parse_jobs(driver, keyword, page)
 
             if not jobs:
