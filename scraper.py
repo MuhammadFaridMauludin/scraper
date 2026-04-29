@@ -57,28 +57,19 @@ def parse_jobs(driver, keyword, page):
 
                 spans = card.find_elements(By.TAG_NAME, "span")
 
-                # DEBUG: print semua span dulu
-                for span in spans:
-                    print(repr(span.text.strip()))
-
                 for span in spans:
                     text = span.text.strip().lower()
-                    print(f"Checking: '{text}'")  # debug
                     
-                    if text in ["full time", "full-time"]:
-                        job_type = "Full Time"
+                    if "jenis pekerjaan" in text:
+                        if "full" in text:
+                            job_type = "Full Time"
+                        elif "part" in text:
+                            job_type = "Part Time"
+                        elif "contract" in text:
+                            job_type = "Contract"
+                        elif "intern" in text:
+                            job_type = "Internship"
                         break
-                    elif text in ["part time", "part-time"]:
-                        job_type = "Part Time"
-                        break
-                    elif "contract" in text:
-                        job_type = "Contract"
-                        break
-                    elif "intern" in text:
-                        job_type = "Internship"
-                        break
-
-                print(f"Result job_type: '{job_type}'")
 
                 try:
                     classification = card.find_element(By.CSS_SELECTOR, "a[data-automation='jobClassification']").text.strip()
