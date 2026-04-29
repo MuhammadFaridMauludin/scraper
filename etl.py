@@ -35,10 +35,24 @@ def detect_skills(text):
     text = text.lower()
 
     skill_list = [
-        "python", "sql", "excel", "tableau",
-        "power bi", "java", "javascript",
-        "react", "laravel", "php"
-    ]
+    # Core Data Skills
+    "python", "sql", "r", "excel",
+    
+    # Data Visualization
+    "tableau", "power bi", "looker",
+    
+    # Data Engineering
+    "airflow", "spark", "hadoop", "kafka",
+    
+    # Database
+    "mysql", "postgresql", "bigquery",
+    
+    # Machine Learning
+    "machine learning", "deep learning", "tensorflow", "pandas", "numpy", "scikit-learn",
+    
+    # Tools
+    "git", "docker"
+]
 
     found = [skill for skill in skill_list if skill in text]
 
