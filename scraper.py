@@ -59,10 +59,8 @@ def parse_jobs(driver, keyword, page):
 
                 for span in spans:
                     text = span.text.strip().lower()
-                    if len(text) > 20:
-                            continue
 
-                    if "full time" in text or "fulltime" in text:
+                    if text in ["Full time", "full-time"]:
                         job_type = "Full Time"
                         break
                     elif text in ["part time", "part-time"]:
