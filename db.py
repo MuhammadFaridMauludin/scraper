@@ -14,6 +14,32 @@ def get_connection():
         database="job_analisis"
     )
 
+def init_db():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS jobs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            job_id VARCHAR(50) UNIQUE,
+            title VARCHAR(255),
+            company VARCHAR(255),
+            location VARCHAR(255),
+            salary VARCHAR(255),
+            job_type VARCHAR(100),
+            classification VARCHAR(100),
+            date_posted VARCHAR(100),
+            job_url TEXT,
+            keyword VARCHAR(100),
+            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    print("✅ Tabel jobs siap!")
 
 def save_jobs_raw(jobs):
     conn = get_connection()
