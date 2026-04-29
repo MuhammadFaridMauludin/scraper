@@ -59,13 +59,13 @@ def parse_jobs(driver, keyword, page):
                 for span in spans:
                     text = span.text.lower()
 
-                    if "full time" in text:
+                    if "Full time" in text:
                         job_type = "Full Time"
                         break
-                    elif "part time" in text:
+                    elif "Part time" in text:
                         job_type = "Part Time"
                         break
-                    elif "contract" in text:
+                    elif "Paruh waktu" in text:
                         job_type = "Contract"
                         break
 
