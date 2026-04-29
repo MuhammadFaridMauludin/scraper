@@ -72,15 +72,13 @@ def save_jobs_raw(jobs):
 
         cursor.execute("""
             INSERT IGNORE INTO jobs_raw 
-            (job_id, title, company, location, city, province, salary, job_type, classification, date_posted, job_url, keyword)
+            (job_id, title, company, location, salary, job_type, classification, date_posted, job_url, keyword)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             job.get("job_id"),
             job.get("title"),
             job.get("company"),
-            job.get("location"),
-            city,       
-            province,  
+            job.get("location"), 
             job.get("salary"),
             job.get("job_type"),
             job.get("classification"),
@@ -108,7 +106,7 @@ def transform_and_load(jobs):
         cursor.execute("""
             INSERT INTO jobs_clean
             (job_id, title, company, location, city, province, salary_min, salary_max, experience_level, keyword, skills, job_type)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE 
                 scraped_at = NOW(),
                 skills = VALUES(skills),
