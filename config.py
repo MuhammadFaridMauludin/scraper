@@ -1,6 +1,5 @@
 KEYWORDS = [
-    "software engineer",
-    "full stack developer",
+    "admin",
    
 ]
 
