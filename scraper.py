@@ -48,7 +48,6 @@ def parse_jobs(driver, keyword, page):
                 except:
                     location = ""
 
-                location = card.find_element(...).text.strip()
                 city = ""
                 province = ""
 
