@@ -48,6 +48,40 @@ def parse_jobs(driver, keyword, page):
                 except:
                     location = ""
 
+                location = card.find_element(...).text.strip()
+                city = ""
+                province = ""
+
+                PROVINCES = [
+                    "dki jakarta", "jawa barat", "jawa tengah", "jawa timur",
+                    "banten", "bali", "di yogyakarta",
+                    "sumatera utara", "sumatera barat", "sumatera selatan",
+                    "riau", "kepulauan riau",
+                    "kalimantan timur", "kalimantan barat", "kalimantan selatan",
+                    "sulawesi selatan", "sulawesi utara",
+                    "papua", "papua barat",
+                    "maluku", "maluku utara",
+                    "lampung", "aceh", "jambi"
+                ]
+
+                elements = card.find_elements(By.XPATH, ".//*")
+
+                for el in elements:
+                    text = el.text.strip()
+                    text_lower = text.lower()
+
+                    if not text or len(text) > 50:
+                        continue
+
+                    if "," in text:
+                        parts = text.split(",", 1)
+                        kota = parts[0].strip()
+                        prov = parts[1].strip().lower()
+
+                        if prov in PROVINCES:
+                            city = kota
+                            province = prov.title()
+                            break
                 try:
                     salary = card.find_element(By.CSS_SELECTOR, "span[data-automation='jobSalary']").text.strip()
                 except:
@@ -68,7 +102,6 @@ def parse_jobs(driver, keyword, page):
                         elif "internship" in text or "magang" in text:
                             job_type = "Internship"
                         break
-                    # Hindari substring match pendek yang bisa false positive!
                     elif text in ["part time", "part-time", "paruh waktu"]:
                         job_type = "Part Time"
                         break
@@ -100,6 +133,8 @@ def parse_jobs(driver, keyword, page):
                         "title": title,
                         "company": company,
                         "location": location,
+                        "city": city,              # 🔥 TAMBAH
+                        "province": province, 
                         "salary": salary,
                         "job_type": job_type,
                         "classification": classification,
