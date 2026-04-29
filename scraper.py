@@ -53,7 +53,7 @@ def parse_jobs(driver, keyword, page):
                 except:
                     salary = "Tidak dicantumkan"
 
-                job_type = ""
+                job_type = "Full Time"  # default
 
                 spans = card.find_elements(By.TAG_NAME, "span")
 
@@ -61,14 +61,22 @@ def parse_jobs(driver, keyword, page):
                     text = span.text.strip().lower()
                     
                     if "jenis pekerjaan" in text:
-                        if "full" in text:
-                            job_type = "Full Time"
-                        elif "part" in text:
+                        if "part" in text:
                             job_type = "Part Time"
                         elif "contract" in text:
                             job_type = "Contract"
-                        elif "intern" in text:
+                        elif "internship" in text or "magang" in text:
                             job_type = "Internship"
+                        break
+                    # Hindari substring match pendek yang bisa false positive!
+                    elif text in ["part time", "part-time", "paruh waktu"]:
+                        job_type = "Part Time"
+                        break
+                    elif text in ["contract", "kontrak"]:
+                        job_type = "Contract"
+                        break
+                    elif text in ["internship", "magang"]:
+                        job_type = "Internship"
                         break
 
                 try:
