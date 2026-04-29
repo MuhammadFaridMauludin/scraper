@@ -54,11 +54,19 @@ def parse_jobs(driver, keyword, page):
                     salary = "Tidak dicantumkan"
 
                 job_type = ""
+
                 spans = card.find_elements(By.TAG_NAME, "span")
                 for span in spans:
                     text = span.text.lower()
-                    if "full" in text or "part" in text or "contract" in text:
-                        job_type = span.text.strip()
+
+                    if "full time" in text:
+                        job_type = "Full Time"
+                        break
+                    elif "part time" in text:
+                        job_type = "Part Time"
+                        break
+                    elif "contract" in text:
+                        job_type = "Contract"
                         break
 
                 try:
