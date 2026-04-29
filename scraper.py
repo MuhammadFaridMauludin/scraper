@@ -56,17 +56,21 @@ def parse_jobs(driver, keyword, page):
                 job_type = ""
 
                 spans = card.find_elements(By.TAG_NAME, "span")
-                for span in spans:
-                    text = span.text.lower()
 
-                    if "Full time" in text:
+                for span in spans:
+                    text = span.text.strip().lower()
+
+                    if text in ["full time", "full-time"]:
                         job_type = "Full Time"
                         break
-                    elif "Part time" in text:
+                    elif text in ["part time", "part-time"]:
                         job_type = "Part Time"
                         break
-                    elif "Paruh waktu" in text:
+                    elif "contract" in text:
                         job_type = "Contract"
+                        break
+                    elif "intern" in text:
+                        job_type = "Internship"
                         break
 
                 try:
