@@ -4,6 +4,6 @@ KEYWORDS = [
     "data scientist",
 ]
 
-MAX_PAGES = 3
+MAX_PAGES = 4
 
 DELAY = 3
