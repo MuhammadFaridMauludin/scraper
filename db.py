@@ -75,7 +75,7 @@ def transform_and_load(jobs):
 
         cursor.execute("""
             INSERT INTO jobs_clean
-            (job_id, title, company, location, salary_min, salary_max, experience_level, keyword)
+            (job_id, title, company, location, salary_min, salary_max, experience_level, keyword, skills, job_type)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
             ON DUPLICATE KEY UPDATE scraped_at=NOW()
         """, (

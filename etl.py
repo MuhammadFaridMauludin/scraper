@@ -14,6 +14,7 @@ def parse_salary(salary_text):
 
     return None, None
 
+
 def detect_experience(title):
     title = title.lower()
 
@@ -25,3 +26,20 @@ def detect_experience(title):
         return "Junior"
 
     return "Unknown"
+
+
+def detect_skills(text):
+    if not text:
+        return ""
+
+    text = text.lower()
+
+    skill_list = [
+        "python", "sql", "excel", "tableau",
+        "power bi", "java", "javascript",
+        "react", "laravel", "php"
+    ]
+
+    found = [skill for skill in skill_list if skill in text]
+
+    return ", ".join(found)
