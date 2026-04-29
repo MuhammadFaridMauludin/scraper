@@ -23,6 +23,6 @@ KEYWORDS = [
     "it consultant"
 ]
 
-MAX_PAGES = 4
+MAX_PAGES = 2
 
 DELAY = 3

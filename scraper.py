@@ -53,10 +53,13 @@ def parse_jobs(driver, keyword, page):
                 except:
                     salary = "Tidak dicantumkan"
 
-                try:
-                    job_type = card.find_element(By.CSS_SELECTOR, "span[data-automation='jobWorkType']").text.strip()
-                except:
-                    job_type = ""
+                job_type = ""
+                spans = card.find_elements(By.TAG_NAME, "span")
+                for span in spans:
+                    text = span.text.lower()
+                    if "full" in text or "part" in text or "contract" in text:
+                        job_type = span.text.strip()
+                        break
 
                 try:
                     classification = card.find_element(By.CSS_SELECTOR, "a[data-automation='jobClassification']").text.strip()
