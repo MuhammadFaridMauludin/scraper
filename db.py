@@ -7,7 +7,7 @@ load_dotenv()
 
 def get_connection():
     return mysql.connector.connect(
-        host="168.110.192.215",
+        host="mysql-job",
         port=3306,
         user="scraper",
         password="@Corazon015.",
