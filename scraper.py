@@ -51,48 +51,92 @@ def parse_jobs(driver, keyword, page):
                 city = ""
                 province = ""
 
-                PROVINCES = [
-                    "dki jakarta", "jawa barat", "jawa tengah", "jawa timur",
-                    "banten", "bali", "di yogyakarta",
-                    "sumatera utara", "sumatera barat", "sumatera selatan",
-                    "riau", "kepulauan riau",
-                    "kalimantan timur", "kalimantan barat", "kalimantan selatan",
-                    "sulawesi selatan", "sulawesi utara",
-                    "papua", "papua barat",
-                    "maluku", "maluku utara",
-                    "lampung", "aceh", "jambi"
-                ]
+              PROVINCES = [
+        "east java", "west java", "central java", "jakarta",
+        "banten", "bali", "yogyakarta", "di yogyakarta",
+        "north sumatra", "west sumatra", "south sumatra",
+        "riau", "riau islands",
+        "east kalimantan", "west kalimantan", "south kalimantan",
+        "north kalimantan", "central kalimantan",
+        "south sulawesi", "north sulawesi", "central sulawesi",
+        "southeast sulawesi", "west sulawesi",
+        "papua", "west papua",
+        "maluku", "north maluku",
+        "lampung", "aceh", "jambi", "bengkulu",
+        "bangka belitung", "gorontalo",
+        "jawa timur", "jawa barat", "jawa tengah", "dki jakarta",
+        "kalimantan timur", "kalimantan barat", "kalimantan selatan",
+        "sulawesi selatan", "sumatera utara", "kepulauan riau",
+    ];
 
+    NOISE = [
+        "urgently hiring", "at", "private advertiser", "featured",
+        "full time", "part time", "contract", "internship", "magang",
+        "this is a full time job", "this is a part time job"
+    ]
+
+def init_driver():
+    return uc.Chrome(headless=False, version_main=147)
+
+def parse_jobs(driver, keyword, page):
+    jobs = []
+    try:
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "article[data-job-id]"))
+        )
+        cards = driver.find_elements(By.CSS_SELECTOR, "article")
+
+        for card in cards:
+            try:
+                job_id = card.get_attribute("data-job-id") or ""
+
+                try:
+                    title = card.find_element(By.CSS_SELECTOR, "a[data-automation='jobTitle']").text.strip()
+                except:
+                    title = ""
+
+                try:
+                    company = card.find_element(By.CSS_SELECTOR, "a[data-automation='jobCompany']").text.strip()
+                except:
+                    company = ""
+
+                try:
+                    location = card.find_element(By.CSS_SELECTOR, "a[data-automation='jobLocation']").text.strip()
+                except:
+                    location = ""
+
+                # ✅ Parse city & province
+                city = ""
+                province = ""
                 elements = card.find_elements(By.XPATH, ".//*")
 
-                for el in elements:
+                for el in elements:                          # ✅ indent benar, di dalam for card
                     text = el.text.strip()
                     text_lower = text.lower()
 
-                    if not text or len(text) > 50:
+                    if not text or len(text) > 60 or "\n" in text:
                         continue
-
+                    if text_lower in NOISE:
+                        continue
                     if "," in text:
                         parts = text.split(",", 1)
                         kota = parts[0].strip()
                         prov = parts[1].strip().lower()
-
                         if prov in PROVINCES:
                             city = kota
-                            province = prov.title()
+                            province = parts[1].strip().title()
                             break
+
+                # ✅ Salary, job_type, dll — semua di dalam for card
                 try:
                     salary = card.find_element(By.CSS_SELECTOR, "span[data-automation='jobSalary']").text.strip()
                 except:
                     salary = "Tidak dicantumkan"
 
-                job_type = "Full Time"  # default
-
+                job_type = "Full Time"
                 spans = card.find_elements(By.TAG_NAME, "span")
-
                 for span in spans:
                     text = span.text.strip().lower()
-                    
                     if "jenis pekerjaan" in text:
                         if "part" in text:
                             job_type = "Part Time"
@@ -132,8 +176,8 @@ def parse_jobs(driver, keyword, page):
                         "title": title,
                         "company": company,
                         "location": location,
-                        "city": city,              # 🔥 TAMBAH
-                        "province": province, 
+                        "city": city,
+                        "province": province,
                         "salary": salary,
                         "job_type": job_type,
                         "classification": classification,
@@ -141,6 +185,7 @@ def parse_jobs(driver, keyword, page):
                         "job_url": job_url,
                         "keyword": keyword,
                     })
+
             except Exception as e:
                 print(f"    ⚠️ Skip 1 card: {e}")
                 continue
@@ -163,7 +208,7 @@ def scrape_keyword(driver, keyword):
             driver.get(url)
             print("TITLE:", driver.title)
             print(driver.page_source[:1000])
-            time.sleep(DELAY+3)
+            time.sleep(DELAY + 3)
             jobs = parse_jobs(driver, keyword, page)
 
             if not jobs:
