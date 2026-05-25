@@ -47,8 +47,8 @@ def init_driver():
     options = uc.ChromeOptions()
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--headless=new")        
-    options.add_argument("--disable-gpu")         
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
     # Auto-detect Chrome binary
@@ -59,16 +59,19 @@ def init_driver():
         "/usr/bin/chromium-browser",
     ]
     chrome_bin = next((p for p in chrome_paths if os.path.exists(p)), None)
-    
+
     if chrome_bin is None:
         raise RuntimeError("❌ Chrome binary tidak ditemukan di container!")
-    
+
     print(f"✅ Menggunakan Chrome: {chrome_bin}")
 
     driver = uc.Chrome(
         options=options,
-        browser_executable_path=chrome_bin, 
-        headless=True,    
+        browser_executable_path=chrome_bin,
+        headless=True,
+        version_main=148,
+        use_subprocess=True
+
     )
     return driver
 
