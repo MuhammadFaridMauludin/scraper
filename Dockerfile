@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     libatk-bridge2.0-0 \
     libgtk-3-0 \
+    xvfb \
+    x11-utils \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -23,4 +25,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "scraper.py"]
+CMD ["xvfb-run", "--server-args=-screen 0 1920x1080x24", "python", "scraper.py"]
