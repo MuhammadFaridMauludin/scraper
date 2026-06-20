@@ -63,26 +63,6 @@ git clone <repository-url>
 cd scraper
 ```
 
-### Create Virtual Environment
-
-```bash
-python -m venv venv
-```
-
-### Activate Environment
-
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Linux:
-
-```bash
-source venv/bin/activate
-```
-
 ### Install Dependencies
 
 ```bash
@@ -106,13 +86,13 @@ python etl_job.py
 Build image:
 
 ```bash
-docker build -t jobanalytic-scraper .
+docker build -t 'image_name' .
 ```
 
 Run container:
 
 ```bash
-docker run jobanalytic-scraper
+docker run 'container_name'
 ```
 
 ## Data Pipeline Schedule
