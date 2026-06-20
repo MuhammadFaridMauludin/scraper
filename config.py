@@ -23,4 +23,4 @@ KEYWORDS = [
 
 MAX_PAGES = 1
 
-DELAY = 3
+DELAY = 5
