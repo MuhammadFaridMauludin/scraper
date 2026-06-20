@@ -1,173 +1,97 @@
-import mysql.connector
-from dotenv import load_dotenv
+import requests
 import os
+from dotenv import load_dotenv
 from etl import parse_salary, detect_experience, detect_skills
+import datetime
 
 load_dotenv()
 
-def get_connection():
-    return mysql.connector.connect(
-        host="mysql-job",
-        port=3306,
-        user="scraper",
-        password="@Corazon015.",
-        database="job_analisis"
-    )
-
-def init_db():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS jobs_raw (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            job_id VARCHAR(50) UNIQUE,
-            title VARCHAR(255),
-            company VARCHAR(255),
-            location VARCHAR(255),
-            city VARCHAR(100),
-            province VARCHAR(100),
-            salary VARCHAR(255),
-            job_type VARCHAR(100),
-            classification VARCHAR(100),
-            date_posted VARCHAR(100),
-            job_url TEXT,
-            keyword VARCHAR(100),
-            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS jobs_clean (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            job_id VARCHAR(50) UNIQUE,
-            title VARCHAR(255),
-            company VARCHAR(255),
-            location VARCHAR(255),
-            city VARCHAR(100),
-            province VARCHAR(100),
-            salary_min BIGINT,
-            salary_max BIGINT,
-            experience_level VARCHAR(50),
-            job_type VARCHAR(100),
-            skills TEXT,
-            keyword VARCHAR(100),
-            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print("✅ Tabel jobs siap!")
+ORDS_BASE = os.getenv("ORDS_BASE_URL")
+ORDS_USER = os.getenv("ORDS_USER")
+ORDS_PASS = os.getenv("ORDS_PASSWORD")
 
 
-def save_jobs_raw(jobs):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    for job in jobs:
-        cursor.execute("""
-            INSERT IGNORE INTO jobs_raw 
-            (job_id, title, company, location, city, province, salary, job_type, classification, date_posted, job_url, keyword)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            job.get("job_id"),
-            job.get("title"),
-            job.get("company"),
-            job.get("location"),
-            job.get("city", ""),      # ✅ ditambah
-            job.get("province", ""),  # ✅ ditambah
-            job.get("salary"),
-            job.get("job_type"),
-            job.get("classification"),
-            job.get("date_posted"),
-            job.get("job_url"),
-            job.get("keyword"),
-        ))
-
-    conn.commit()
-    cursor.close()
-    conn.close()
+def clean(value):
+    if value is None:
+        return ""
+    return str(value).replace("\xa0", " ").replace("\u200b", "").strip()
 
 
-def transform_and_load(jobs):
-    conn = get_connection()
-    cursor = conn.cursor()
+def get_session():
+    s = requests.Session()
+    s.auth = (ORDS_USER, ORDS_PASS)
+    s.headers.update({"Content-Type": "application/json"})
+    return s
 
+
+def transform_jobs(jobs):
+    """Transform raw jobs menjadi format clean. Pure function, tidak ada I/O."""
+    result = []
     for job in jobs:
         salary_min, salary_max = parse_salary(job.get("salary"))
-        experience = detect_experience(job.get("title"))
+        experience = detect_experience(job.get("title", ""))
+        text       = (job.get("title") or "") + " " + (job.get("classification") or "")
+        skills     = detect_skills(text)
 
-        text_combined = (job.get("title") or "") + " " + (job.get("classification") or "")
-        skills = detect_skills(text_combined)
+        result.append({
+            "job_id":           clean(job.get("job_id")),
+            "title":            clean(job.get("title")),
+            "company":          clean(job.get("company")),
+            "location":         clean(job.get("location")),
+            "city":             clean(job.get("city")),
+            "province":         clean(job.get("province")),
+            "salary_min":       salary_min,
+            "salary_max":       salary_max,
+            "experience_level": experience,
+            "job_type":         clean(job.get("job_type")),
+            "skills":           skills,
+            "keyword":          clean(job.get("keyword")),
+        })
+    return result
 
-        cursor.execute("""
-            INSERT INTO jobs_clean
-            (job_id, title, company, location, city, province, salary_min, salary_max, experience_level, keyword, skills, job_type)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE 
-                scraped_at = NOW(),
-                skills = VALUES(skills),
-                job_type = VALUES(job_type),
-                city = VALUES(city),
-                province = VALUES(province)
-        """, (
-            job.get("job_id"),
-            job.get("title"),
-            job.get("company"),
-            job.get("location"),
-            job.get("city", ""),      
-            job.get("province", ""),  
-            salary_min,
-            salary_max,
-            experience,
-            job.get("keyword"),
-            skills,
-            job.get("job_type"),  # ✅ sekarang 12 nilai = 12 kolom
-        ))
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-
-def transform_and_load(jobs):
-    conn = get_connection()
-    cursor = conn.cursor()
-
+def save_raw_to_db(jobs):
+    session = get_session()
+    now = datetime.datetime.utcnow().isoformat()
     for job in jobs:
-        salary_min, salary_max = parse_salary(job.get("salary"))
-        experience = detect_experience(job.get("title"))
+        payload = {
+            "job_id":         clean(job.get("job_id")),
+            "title":          clean(job.get("title")),
+            "company":        clean(job.get("company")),
+            "location":       clean(job.get("location")),
+            "city":           clean(job.get("city")),
+            "province":       clean(job.get("province")),
+            "salary":         clean(job.get("salary")),
+            "job_type":       clean(job.get("job_type")),
+            "classification": clean(job.get("classification")),
+            "date_posted":    clean(job.get("date_posted")),
+            "job_url":        "https://id.jobstreet.com" + clean(job.get("job_url")) if job.get("job_url") else "",
+            "keyword":        clean(job.get("keyword")),
+            "scraped_at":     now,
+        }
+        try:
+            resp = session.post(f"{ORDS_BASE}/jobs_raw/", json=payload)
+            if resp.status_code in (200, 201):
+                pass
+            elif resp.status_code == 409 or "ORA-00001" in resp.text:
+                pass
+            else:
+                print(f"    jobs_raw error {resp.status_code}: {resp.text[:100]}")
+        except Exception as e:
+            print(f"    jobs_raw exception: {e}")
 
-        text_combined = (job.get("title") or "") + " " + (job.get("classification") or "")
-        skills = detect_skills(text_combined)
-
-        cursor.execute("""
-            INSERT INTO jobs_clean
-            (job_id, title, company, location, city, province, salary_min, salary_max, experience_level, keyword, skills, job_type)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE 
-                scraped_at = NOW(),
-                skills = VALUES(skills),
-                job_type = VALUES(job_type),
-                city = VALUES(city),
-                province = VALUES(province)
-        """, (
-            job.get("job_id"),
-            job.get("title"),
-            job.get("company"),
-            job.get("location"),
-            job.get("city", ""),      
-            job.get("province", ""),  
-            salary_min,
-            salary_max,
-            experience,
-            job.get("keyword"),
-            skills,
-            job.get("job_type"),  # ✅ sekarang 12 nilai = 12 kolom
-        ))
-
-    conn.commit()
-    cursor.close()
-    conn.close()
+def save_clean_to_db(jobs_clean):
+    """Simpan hasil transform ke jobs_clean via ORDS."""
+    session = get_session()
+    now = datetime.datetime.utcnow().isoformat()
+    for job in jobs_clean:
+        job["scraped_at"] = now  # tambahkan timestamp eksplisit
+        try:
+            resp = session.post(f"{ORDS_BASE}/jobs_clean/", json=job)
+            if resp.status_code in (200, 201):
+                pass
+            elif resp.status_code == 409 or "ORA-00001" in resp.text:
+                pass
+            else:
+                print(f"    jobs_clean error {resp.status_code}: {resp.text[:100]}")
+        except Exception as e:
+            print(f"    jobs_clean exception: {e}")
